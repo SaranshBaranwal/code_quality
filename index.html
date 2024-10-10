@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Display CSV Data</title>
+    <title>CSV Viewer</title>
     <style>
         table {
             width: 100%;
@@ -13,56 +13,65 @@
             border: 1px solid black;
         }
         th, td {
-            padding: 10px;
+            padding: 8px;
             text-align: left;
         }
     </style>
 </head>
 <body>
-    <h1>CSV Data from S3</h1>
-    <table id="csvTable"></table>
 
-    <script>
-        // URL of your CSV file stored in S3 (ensure the S3 object is public)
-        const csvUrl = './code_report_format.csv';
+<h2>Select a CSV file to display:</h2>
+<select id="csvDropdown">
+    <option value="digital_shelf.csv">digital_shelf.csv</option>
+    <option value="control_tower.csv">control_tower.csv</option>
+    <option value="parcel_tracking.csv">parcel_tracking.csv</option>
+</select>
 
-        // Function to fetch CSV data
-        async function fetchCSV() {
-            const response = await fetch(csvUrl);
-            const data = await response.text();
+<button onclick="loadCSV()">Load CSV</button>
 
-            // Parse and display the CSV
+<h2>CSV Content:</h2>
+<table id="csvTable"></table>
+
+<script>
+// Function to load the selected CSV file
+function loadCSV() {
+    const selectedFile = document.getElementById("csvDropdown").value;
+
+    // Construct the file URL (assuming the files are in the same GitHub repository)
+    const fileURL = `https://raw.githubusercontent.com/SaranshBaranwal/code_quality/main/${selectedFile}`;
+
+    // Fetch the CSV file
+    fetch(fileURL)
+        .then(response => response.text())
+        .then(data => {
+            // Parse and display CSV data
             displayCSV(data);
-        }
+        })
+        .catch(error => {
+            console.error('Error loading CSV:', error);
+        });
+}
 
-        // Function to convert CSV text to HTML table
-        function displayCSV(data) {
-            const rows = data.split("\n");
-            let table = "<tr>";
+// Function to display CSV content in a table
+function displayCSV(csvData) {
+    const rows = csvData.split("\n").map(row => row.split(","));
+    const table = document.getElementById("csvTable");
+    table.innerHTML = "";
 
-            // Add headers (first row)
-            const headers = rows[0].split(",");
-            headers.forEach(header => {
-                table += `<th>${header.trim()}</th>`;
-            });
-            table += "</tr>";
+    // Add table rows
+    rows.forEach((row, index) => {
+        const tr = document.createElement("tr");
 
-            // Add rows (data)
-            for (let i = 1; i < rows.length; i++) {
-                const cols = rows[i].split(",");
-                table += "<tr>";
-                cols.forEach(col => {
-                    table += `<td>${col.trim()}</td>`;
-                });
-                table += "</tr>";
-            }
+        row.forEach(cell => {
+            const cellElement = document.createElement(index === 0 ? "th" : "td");
+            cellElement.textContent = cell;
+            tr.appendChild(cellElement);
+        });
 
-            // Insert table into the HTML page
-            document.getElementById("csvTable").innerHTML = table;
-        }
+        table.appendChild(tr);
+    });
+}
+</script>
 
-        // Call fetchCSV function on page load
-        fetchCSV();
-    </script>
 </body>
 </html>
